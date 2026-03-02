@@ -1,111 +1,64 @@
 # debian-scripts
 
-Personal, opinionated Debian setup scripts.
+Opinionated shell scripts for turning a fresh **Debian Trixie** install into a modern desktop.  
+Each script is self-contained and safe to re-run.
 
-This repository exists for one reason: fast, repeatable Debian installs without ceremony.
-No frameworks, no Ansible, no meta-packages pretending to be something they are not.
-Just shell scripts that do exactly what they say.
-
-This is not a general-purpose project. It is designed for personal use on Debian-based systems
-(tested on Debian 13) and assumes you know what you are running.
-
-## Overview
-
-- Modular Bash scripts
-- One responsibility per script
-- Can be run individually or through a central setup script
-- Explicit, opinionated defaults for desktop and gaming use
-
-This repository makes no attempt to be clever or universal.
-
-## Structure
-
-base/
-Core system setup. These scripts are expected to run on every install.
-
-Includes:
-- Core system setup and updates
-- Essential utilities
-- Firmware and microcode
-- Firewall (UFW with sane defaults)
-
-desktop/
-User-space desktop stack.
-
-Includes:
-- Mesa / Vulkan userspace
-- PipeWire + WirePlumber
-- Flatpak integration
-- ZRAM
-- Sysctl tuning
-- Desktop utilities
-
-kernel/
-Explicit kernel choices:
-- Debian backported kernel
-- Liquorix
-- XanMod
-
-Only one kernel should be installed.
-
-hardware/
-Vendor-specific hardware support.
-
-Includes:
-- NVIDIA proprietary CUDA drivers
-- NVIDIA Open Kernel Modules
-- VAAPI / Vulkan tools
-
-No hardware is auto-detected.
-
-profiles/
-Optional capability layers.
-
-Includes:
-- gaming-meta.sh (runtimes and infrastructure)
-- gaming-applications.sh (actual applications)
-- install-heroic.sh
-- install-github-desktop.sh
-
-Profiles are opt-in.
-
-## Usage
-
-Interactive setup:
-```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/habibimedwassim/debian-scripts/main/setup.sh)
-```
-
-Run a single script remotely:
-```bash
-curl -fsSL https://raw.githubusercontent.com/habibimedwassim/debian-scripts/main/profiles/gaming-meta.sh | bash
-```
-
-Local execution (recommended):
 ```bash
 git clone https://github.com/habibimedwassim/debian-scripts.git
 cd debian-scripts
-chmod +x **/*.sh
-./setup.sh
 ```
-## Assumptions
 
-- Debian-based system (Debian 13)
-- amd64 architecture
-- Network access
-- User has sudo privileges
+---
 
-## Security
+## Scripts
 
-Scripts may:
-- Install packages from official repositories
-- Add third-party repositories explicitly
-- Download .deb files from upstream sources
-- Configure a basic firewall
+### Base
 
-Review scripts before running them.
+| Script | What it does |
+|---|---|
+| `base/system.sh` | i386 multilib, backports, firmware, core tools, WineHQ repo, DNS-over-TLS |
+| `base/fonts.sh` | Noto + Liberation + MS core web fonts, Arabic fontconfig rules |
+| `base/nerd-fonts.sh` | JetBrainsMono, FiraCode, Hack, CascadiaCode (latest Nerd Fonts release) |
 
-## License
+### Desktop
 
-Do whatever you want with this.
-No support is provided.
+| Script | What it does |
+|---|---|
+| `desktop/graphics-mesa.sh` | Mesa VA-API + Vulkan; auto-installs Intel/AMD extras based on detected GPU |
+| `desktop/audio-pipewire.sh` | PipeWire + WirePlumber + EasyEffects, stable 48 kHz clock config |
+| `desktop/flatpak-kde.sh` | Flatpak + KDE Plasma backend + Flathub |
+| `desktop/flatpak-gnome.sh` | Flatpak + GNOME backend + Flathub |
+| `desktop/system-optimizations.sh` | ZRAM, sysctl tuning, shell tweaks (`eza`, `bat`, `starship`) in `~/.config/bashrc.d/` |
+
+### Hardware
+
+| Script | What it does |
+|---|---|
+| `hardware/nvidia.sh` | NVIDIA driver via extrepo — prompts to choose `nvidia-open` (Turing+) or `cuda-drivers` |
+
+### Kernels — pick one
+
+| Script | Kernel |
+|---|---|
+| `kernel/backported.sh` | Debian trixie-backports kernel + ntsync |
+| `kernel/liquorix.sh` | [Liquorix](https://liquorix.net) gaming kernel + ntsync |
+
+### Gaming
+
+| Script | What it does |
+|---|---|
+| `profiles/gaming-meta.sh` | Runtime libs + full codec stack (64-bit + 32-bit) |
+| `profiles/gaming-applications.sh` | Wine (WineHQ), Steam, MangoHud, GOverlay, Gamemode |
+| `profiles/install-winetricks.sh` | Latest Winetricks from upstream |
+| `profiles/install-protontricks.sh` | Protontricks via pipx |
+| `profiles/install-heroic.sh` | Heroic Games Launcher — self-updating |
+| `profiles/install-github-desktop.sh` | GitHub Desktop for Linux (shiftkey fork) — self-updating |
+
+---
+
+## Notes
+
+- All scripts require Debian Trixie (amd64) and sudo access.
+- Reboot after `base/system.sh`, `hardware/nvidia.sh`, or any kernel script.
+- `ntsync` is enabled by the kernel scripts (backported / Liquorix), both of which are 6.14+.
+- Run `graphics-mesa.sh` before `hardware/nvidia.sh`.

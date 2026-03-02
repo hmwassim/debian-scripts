@@ -1,75 +1,112 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
+# ─── Shell utilities ──────────────────────────────────────────────────────────
+echo "==> Installing shell utilities..."
 sudo apt install -y \
     eza \
     starship \
     papirus-icon-theme \
-    fastfetch
+    fastfetch \
+    bat \
+    ripgrep
 
+# ─── bashrc.d drop-in ─────────────────────────────────────────────────────────
+# Shell customisations live in their own file, not inlined into ~/.bashrc.
+# ~/.bashrc just sources the directory — easy to extend, easy to remove.
+
+BASHRC_D="$HOME/.config/bashrc.d"
+CUSTOM_FILE="$BASHRC_D/00-custom.sh"
 BASHRC="$HOME/.bashrc"
+LOADER_MARKER="# source ~/.config/bashrc.d"
 
-START_MARKER="# >>> custom shell tweaks >>>"
-END_MARKER="# <<< custom shell tweaks <<<"
+mkdir -p "$BASHRC_D"
 
-# If the block already exists, do nothing
-if grep -qF "$START_MARKER" "$BASHRC"; then
-    echo "Custom bashrc block already present. Skipping."
-    exit 0
+# Append loader to ~/.bashrc (once)
+if ! grep -qF "$LOADER_MARKER" "$BASHRC"; then
+    cat << 'BASHRC_LOADER' >> "$BASHRC"
+
+# source ~/.config/bashrc.d
+if [ -d "$HOME/.config/bashrc.d" ]; then
+    for _f in "$HOME/.config/bashrc.d"/*.sh; do
+        [ -r "$_f" ] && . "$_f"
+    done
+    unset _f
+fi
+BASHRC_LOADER
+    echo "Loader added to ~/.bashrc."
 fi
 
-cat <<'EOF' >> "$BASHRC"
+# Write (or overwrite) the custom file — idempotent
+cat > "$CUSTOM_FILE" << 'CUSTOM'
+# ── Custom shell tweaks (managed by system-optimizations.sh) ──────────────────
 
-# >>> custom shell tweaks >>>
-
-# Ignore upper and lowercase when TAB completion
+# Case-insensitive tab completion
 bind "set completion-ignore-case on"
 
-# Changing "ls" to "eza"
+# eza replaces ls
 alias ls='eza -al --icons --color=always --group-directories-first'
-alias la='eza -a --icons --color=always --group-directories-first'
-alias ll='eza -l --icons --color=always --group-directories-first'
+alias la='eza -a  --icons --color=always --group-directories-first'
+alias ll='eza -l  --icons --color=always --group-directories-first'
 alias lt='eza -aT --icons --color=always --group-directories-first'
 
-# Starship prompt
-eval "$(starship init bash)"
+# bat replaces cat (syntax highlighting, no pager)
+alias cat='batcat --style=plain --pager=never'
 
-# <<< custom shell tweaks <<<
-EOF
+# Starship prompt — must be last
+eval "$(starship init bash)"
+CUSTOM
+
+echo "Shell tweaks written to $CUSTOM_FILE"
+
+# ─── ZRAM ─────────────────────────────────────────────────────────────────────
+echo "==> Configuring ZRAM..."
+sudo apt install -y systemd-zram-generator
 
 sudo tee /etc/systemd/zram-generator.conf > /dev/null << 'EOF'
 [zram0]
-zram-size = ram / 4
+# Compresses well with zstd; max size capped so it stays reasonable on any RAM.
+# Adjust zram-size if you have very little RAM (e.g. ram / 2 for 4-8 GB systems).
+zram-size = min(ram / 4, 4096)
 compression-algorithm = zstd
 swap-priority = 100
 fs-type = swap
 EOF
 
-sudo tee /etc/environment.d/90-wayland-electron.conf > /dev/null << 'EOF'
-ELECTRON_OZONE_PLATFORM_HINT=x11
+# ─── Electron Wayland hint ────────────────────────────────────────────────────
+# "auto" lets apps that support Wayland use it natively; others fall back to XWayland.
+sudo mkdir -p /etc/environment.d
+sudo tee /etc/environment.d/90-electron.conf > /dev/null << 'EOF'
+ELECTRON_OZONE_PLATFORM_HINT=auto
 EOF
 
-# Calculate RAM-based dirty limits (for 0.5% background, 2% max)
+# ─── sysctl tweaks ────────────────────────────────────────────────────────────
+echo "==> Applying sysctl desktop tuning..."
+
 MEM_TOTAL_KB=$(grep MemTotal /proc/meminfo | awk '{print $2}')
-MEM_TOTAL_BYTES=$((MEM_TOTAL_KB * 1024))
+MEM_TOTAL_BYTES=$(( MEM_TOTAL_KB * 1024 ))
 
-DIRTY_BG=$((MEM_TOTAL_BYTES / 200))   # 0.5% of total RAM
-DIRTY_MAX=$((MEM_TOTAL_BYTES / 50))   # 2% of total RAM
+# Background writeback at 0.5%, hard limit at 2% (clamped)
+DIRTY_BG=$(( MEM_TOTAL_BYTES / 200 ))
+DIRTY_MAX=$(( MEM_TOTAL_BYTES / 50 ))
+(( DIRTY_BG  > 1073741824 )) && DIRTY_BG=1073741824   # 1 GB cap
+(( DIRTY_MAX > 4294967296 )) && DIRTY_MAX=4294967296   # 4 GB cap
 
-# Optional: clamp to reasonable upper bounds to avoid crazy values on huge RAM
-MAX_BG=$((1024 * 1024 * 1024))       # 1GB
-MAX_MAX=$((4 * 1024 * 1024 * 1024))  # 4GB
-
-(( DIRTY_BG > MAX_BG )) && DIRTY_BG=$MAX_BG
-(( DIRTY_MAX > MAX_MAX )) && DIRTY_MAX=$MAX_MAX
-
-sudo tee /etc/sysctl.d/99-desktop.conf > /dev/null <<EOF
-# Desktop responsiveness tuning
-
-vm.swappiness = 15
+sudo tee /etc/sysctl.d/99-desktop.conf > /dev/null << EOF
+# ── Memory ────────────────────────────────────────────────────────────────────
+vm.swappiness = 10
 vm.vfs_cache_pressure = 50
-vm.dirty_background_bytes = $DIRTY_BG
-vm.dirty_bytes = $DIRTY_MAX
+vm.dirty_background_bytes = ${DIRTY_BG}
+vm.dirty_bytes = ${DIRTY_MAX}
 
+# ── Scheduler ─────────────────────────────────────────────────────────────────
+kernel.sched_autogroup_enabled = 1
+
+# ── Network ───────────────────────────────────────────────────────────────────
 net.ipv4.icmp_ignore_bogus_error_responses = 1
+net.core.netdev_max_backlog = 16384
+net.ipv4.tcp_fastopen = 3
 EOF
+
+sudo sysctl --system
+echo "==> System optimizations applied."

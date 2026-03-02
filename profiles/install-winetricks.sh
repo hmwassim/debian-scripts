@@ -1,14 +1,24 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
-wget https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks
-chmod +x winetricks
-sudo mv winetricks /usr/local/bin/
+# Winetricks — script helper for Wine compat tweaks / Windows runtime installs
+# Always fetches the latest version directly from the upstream repository.
 
-cat > ~/.local/share/applications/winetricks.desktop << 'EOF'
+REMOTE_URL="https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks"
+INSTALL_PATH="/usr/local/bin/winetricks"
+
+echo "==> Downloading latest Winetricks..."
+sudo curl -fsSL "$REMOTE_URL" -o "$INSTALL_PATH"
+sudo chmod +x "$INSTALL_PATH"
+
+# Desktop entry (for GUI launchers)
+DESKTOP_DIR="$HOME/.local/share/applications"
+mkdir -p "$DESKTOP_DIR"
+
+cat > "$DESKTOP_DIR/winetricks.desktop" << 'EOF'
 [Desktop Entry]
 Name=Winetricks
-Comment=Work around problems with Wine
+Comment=Work around problems in Wine
 Exec=/usr/local/bin/winetricks --gui
 Icon=winetricks
 Type=Application
@@ -16,3 +26,5 @@ Terminal=false
 Categories=Utility;Emulator;
 StartupNotify=true
 EOF
+
+echo "==> Winetricks installed to $INSTALL_PATH"

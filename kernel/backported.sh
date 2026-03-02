@@ -1,17 +1,32 @@
-#!/bin/bash
-set -e
-# check if running on trixie not forky or sid or others, if not, exit with message
+#!/usr/bin/env bash
+set -euo pipefail
+
+# ─── Trixie guard ─────────────────────────────────────────────────────────────
 if ! grep -q "VERSION_CODENAME=trixie" /etc/os-release; then
-    echo "This script is intended for Debian Trixie. Exiting."
+    echo "ERROR: This script targets Debian Trixie. Exiting."
     exit 1
 fi
 
-#check if backports is already enabled
-if ! grep -q "deb.*trixie-backports" /etc/apt/sources.list /etc/apt/sources.list.d/*.list 2>/dev/null; then
-    echo "deb http://deb.debian.org/debian trixie-backports main" | sudo tee /etc/apt/sources.list.d/backports.list
+# ─── Trixie backports ─────────────────────────────────────────────────────────
+if ! grep -rq "trixie-backports" /etc/apt/sources.list /etc/apt/sources.list.d/ 2>/dev/null; then
+    echo "==> Adding trixie-backports..."
+    echo "deb http://deb.debian.org/debian trixie-backports main contrib non-free non-free-firmware" | \
+        sudo tee /etc/apt/sources.list.d/backports.list
     sudo apt update
 else
-    echo "Backports already enabled. Skipping."
+    echo "Backports already enabled."
 fi
 
-sudo apt install -t trixie-backports linux-headers-amd64 linux-image-amd64 -y
+# ─── Backported kernel ────────────────────────────────────────────────────────
+echo "==> Installing backported kernel (amd64)..."
+sudo apt install -t trixie-backports -y \
+    linux-headers-amd64 \
+    linux-image-amd64
+
+echo "==> Backported kernel installed. Reboot to apply."
+
+# ─── ntsync ───────────────────────────────────────────────────────────────────
+# Trixie-backports kernel is 6.18+, so ntsync is guaranteed to be available.
+# Improves Wine/Proton threading performance significantly.
+echo "==> Enabling ntsync module..."
+echo ntsync | sudo tee /etc/modules-load.d/ntsync.conf

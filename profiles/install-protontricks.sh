@@ -1,23 +1,20 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
-# Install dependencies
-sudo apt update
-sudo apt install -y \
-    python3-pip \
-    python3-setuptools \
-    python3-venv \
-    pipx
+# Protontricks — Winetricks wrapper for Steam Play (Proton) prefixes
+# Installed via pipx to avoid polluting system Python.
 
-# Ensure pipx is on PATH
+echo "==> Installing pipx (if not already present)..."
+sudo apt install -y pipx
 pipx ensurepath
 
-# You need a new shell for PATH update to take effect
-# If running in script, force it temporarily:
+# Make pipx-managed binaries available for the rest of this script
 export PATH="$HOME/.local/bin:$PATH"
 
-# Install protontricks via pipx (force and include dependencies)
+echo "==> Installing protontricks via pipx..."
 pipx install --force protontricks
 
-# Install desktop integration
+echo "==> Registering desktop integration..."
 protontricks-desktop-install
+
+echo "==> Protontricks installed. Open a new shell or run: source ~/.bashrc"
