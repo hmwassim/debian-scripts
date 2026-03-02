@@ -105,6 +105,16 @@ sudo tee /etc/fonts/local.conf > /dev/null << 'EOF'
     </edit>
   </match>
 
+  <!-- ── sans-serif alias: inject Arabic UI font so browser tabs render correctly ──
+       Browser tab titles have no lang=ar hint; this catches Arabic codepoints
+       rendered via the generic sans-serif family (used by most browser UIs).  -->
+  <alias>
+    <family>sans-serif</family>
+    <prefer>
+      <family>Noto Sans Arabic UI</family>
+    </prefer>
+  </alias>
+
   <!-- ── Emoji: always use Noto Color Emoji ────────────────────────────────── -->
   <match target="pattern">
     <test name="family"><string>emoji</string></test>
