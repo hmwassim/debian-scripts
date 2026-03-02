@@ -66,8 +66,8 @@ sudo apt install -y systemd-zram-generator
 sudo tee /etc/systemd/zram-generator.conf > /dev/null << 'EOF'
 [zram0]
 # Compresses well with zstd; max size capped so it stays reasonable on any RAM.
-# Adjust zram-size if you have very little RAM (e.g. ram / 2 for 4-8 GB systems).
-zram-size = min(ram / 4, 4096)
+# Uses ram / 2 up to 8 GB, matching the default of most mainstream distros.
+zram-size = min(ram / 2, 8192)
 compression-algorithm = zstd
 swap-priority = 100
 fs-type = swap
