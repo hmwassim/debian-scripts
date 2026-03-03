@@ -58,11 +58,6 @@ swap-priority = 100
 fs-type = swap
 EOF
 
-sudo mkdir -p /etc/environment.d
-sudo tee /etc/environment.d/90-electron.conf > /dev/null << 'EOF'
-ELECTRON_OZONE_PLATFORM_HINT=auto
-EOF
-
 echo "==> Applying sysctl desktop tuning..."
 
 MEM_TOTAL_KB=$(grep MemTotal /proc/meminfo | awk '{print $2}')
