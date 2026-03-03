@@ -63,4 +63,22 @@ echo "==> Installing..."
 sudo dpkg -i "$TMP_FILE" || sudo apt-get install -f -y
 rm -f "$TMP_FILE"
 
+# ─── XWayland override ───────────────────────────────────────────────────────
+# ELECTRON_OZONE_PLATFORM_HINT=auto (set globally by system-optimizations.sh)
+# breaks GitHub Desktop — it doesn't support Wayland on this Electron build.
+# A ~/.local override with --ozone-platform=x11 forces XWayland for this app
+# only, without touching the global setting used by other Electron apps.
+SYSTEM_DESKTOP="/usr/share/applications/github-desktop.desktop"
+LOCAL_APPS="$HOME/.local/share/applications"
+mkdir -p "$LOCAL_APPS"
+if [[ -f "$SYSTEM_DESKTOP" ]]; then
+    # Prepend env var reset AND CLI flag:
+    # - ELECTRON_OZONE_PLATFORM_HINT=x11 overrides the global "auto" from
+    #   /etc/environment.d/90-electron.conf (env var wins over CLI flags in Electron)
+    # - --ozone-platform=x11 is kept as an extra safety net
+    sed 's|^\(Exec=.*github-desktop\)|Exec=env ELECTRON_OZONE_PLATFORM_HINT=x11 github-desktop --ozone-platform=x11|' \
+        "$SYSTEM_DESKTOP" > "$LOCAL_APPS/github-desktop.desktop"
+    echo "==> XWayland override written to $LOCAL_APPS/github-desktop.desktop"
+fi
+
 echo "==> GitHub Desktop $LATEST_VERSION installed."
