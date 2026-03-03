@@ -17,7 +17,6 @@ sudo apt install -t trixie-backports -y \
     rtkit \
     udev
 
-# ─── Audio post-processing (EasyEffects + quality LV2 plugins) ────────────────
 echo "==> Installing EasyEffects and LV2 plugins..."
 sudo apt install -y \
     easyeffects \
@@ -26,19 +25,16 @@ sudo apt install -y \
     x42-plugins \
     zam-plugins
 
-# ─── Disable HDA power saving (prevents crackling on Intel HDA / HD Audio) ────
 echo "==> Disabling HDA power saving to prevent audio pops..."
 sudo mkdir -p /etc/modprobe.d
 echo "options snd_hda_intel power_save=0 power_save_controller=N" | \
     sudo tee /etc/modprobe.d/99-audio-disable-powersave.conf
 
-# ─── Per-user PipeWire configuration ──────────────────────────────────────────
 mkdir -p \
     ~/.config/wireplumber/wireplumber.conf.d \
     ~/.config/pipewire/pipewire.conf.d \
     ~/.config/pipewire/pipewire-pulse.conf.d
 
-# Prevent ALSA nodes from suspending (avoids pop-on-wakeup artifacts)
 cat > ~/.config/wireplumber/wireplumber.conf.d/51-disable-suspend.conf << 'EOF'
 monitor.alsa.rules = [
   {
@@ -52,7 +48,6 @@ monitor.alsa.rules = [
 ]
 EOF
 
-# Stable clock — 48 kHz throughout, generous quantum for desktops
 cat > ~/.config/pipewire/pipewire.conf.d/10-clock.conf << 'EOF'
 context.properties = {
     default.clock.rate           = 48000
@@ -63,7 +58,6 @@ context.properties = {
 }
 EOF
 
-# Stop Pulse clients from injecting tiny/incompatible buffer requests
 cat > ~/.config/pipewire/pipewire-pulse.conf.d/10-pulse.conf << 'EOF'
 pulse.properties = {
     pulse.min.req     = 1024/48000
@@ -72,7 +66,6 @@ pulse.properties = {
 }
 EOF
 
-# ─── Enable user services ─────────────────────────────────────────────────────
 systemctl --user enable --now pipewire pipewire-pulse wireplumber
 systemctl --user restart pipewire pipewire-pulse wireplumber
 

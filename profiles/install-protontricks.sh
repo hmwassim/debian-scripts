@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Protontricks — Winetricks wrapper for Steam Play (Proton) prefixes
-# Installed via pipx to avoid polluting system Python.
-
 echo "==> Installing pipx (if not already present)..."
 sudo apt install -y pipx
 pipx ensurepath

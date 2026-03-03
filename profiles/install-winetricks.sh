@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Winetricks — script helper for Wine compat tweaks / Windows runtime installs
-# Always fetches the latest version directly from the upstream repository.
-
 REMOTE_URL="https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks"
 INSTALL_PATH="/usr/local/bin/winetricks"
 

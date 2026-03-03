@@ -1,13 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Runtime libraries and media codecs needed by Windows games running under
-# Wine / Proton, and by native Linux games.
-
 echo "==> Updating package lists..."
 sudo apt update
 
-# ─── Runtime libraries (64-bit + 32-bit) ─────────────────────────────────────────
 sudo apt install -y \
     libgif7           libgif7:i386 \
     libglfw3          libglfw3:i386 \
@@ -24,7 +20,6 @@ sudo apt install -y \
     libxvidcore4 \
     libvulkan1        libvulkan1:i386
 
-# ─── Media / codec stack ────────────────────────────────────────────────────────────
 sudo apt install -y \
     ffmpeg \
     libavcodec-extra \
@@ -49,7 +44,6 @@ sudo apt install -y \
     opus-tools \
     flvmeta
 
-# ─── Audio / MIDI ─────────────────────────────────────────────────────────────────
 sudo apt install -y \
     timidity \
     fluidsynth \

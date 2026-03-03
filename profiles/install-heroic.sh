@@ -4,7 +4,6 @@ set -euo pipefail
 REPO="Heroic-Games-Launcher/HeroicGamesLauncher"
 PKG_NAME="heroic"
 
-# ─── Dependency check ─────────────────────────────────────────────────────────────────
 MISSING_DEPS=()
 for cmd in curl jq dpkg; do
     command -v "$cmd" &>/dev/null || MISSING_DEPS+=("$cmd")
@@ -14,7 +13,6 @@ if (( ${#MISSING_DEPS[@]} > 0 )); then
     sudo apt install -y "${MISSING_DEPS[@]}"
 fi
 
-# ─── Fetch release data ───────────────────────────────────────────────────────────────
 echo "==> Fetching latest Heroic release info..."
 RELEASE_JSON=$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest")
 LATEST_VERSION=$(echo "$RELEASE_JSON" | jq -r '.tag_name | sub("^v"; "")')
@@ -24,7 +22,6 @@ if [[ -z "$LATEST_VERSION" || "$LATEST_VERSION" == "null" ]]; then
     exit 1
 fi
 
-# ─── Version comparison ──────────────────────────────────────────────────────────────
 INSTALLED_VERSION=""
 if dpkg -s "$PKG_NAME" &>/dev/null; then
     INSTALLED_VERSION=$(dpkg-query -W -f='${Version}' "$PKG_NAME" | cut -d- -f1)
@@ -37,7 +34,6 @@ fi
 
 echo "Installed: ${INSTALLED_VERSION:-none}  Latest: $LATEST_VERSION"
 
-# ─── Download + install ───────────────────────────────────────────────────────────────
 DOWNLOAD_URL=$(echo "$RELEASE_JSON" | jq -r '
     .assets[]
     | select(.name | test("\\.deb$"))

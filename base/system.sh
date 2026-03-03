@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# ─── Trixie guard ─────────────────────────────────────────────────────────────
 if ! grep -q "VERSION_CODENAME=trixie" /etc/os-release; then
     echo "ERROR: This script targets Debian Trixie. Exiting."
     exit 1
@@ -11,12 +10,10 @@ echo "==> Updating system..."
 sudo apt update
 sudo apt full-upgrade -y
 
-# ─── i386 multilib ────────────────────────────────────────────────────────────
 echo "==> Enabling i386 architecture..."
 sudo dpkg --add-architecture i386
 sudo apt update
 
-# ─── Trixie backports ─────────────────────────────────────────────────────────
 if ! grep -rq "trixie-backports" /etc/apt/sources.list /etc/apt/sources.list.d/ 2>/dev/null; then
     echo "==> Adding trixie-backports..."
     echo "deb http://deb.debian.org/debian trixie-backports main contrib non-free non-free-firmware" | \
@@ -24,7 +21,6 @@ if ! grep -rq "trixie-backports" /etc/apt/sources.list /etc/apt/sources.list.d/ 
     sudo apt update
 fi
 
-# ─── Firmware ─────────────────────────────────────────────────────────────────
 echo "==> Installing firmware..."
 sudo apt install -t trixie-backports -y \
     firmware-linux \
@@ -35,7 +31,6 @@ sudo apt install -t trixie-backports -y \
     firmware-sof-signed \
     intel-microcode
 
-# ─── Core tools ───────────────────────────────────────────────────────────────
 echo "==> Installing core tools..."
 sudo apt install -t trixie-backports -y \
     git \
@@ -60,18 +55,13 @@ sudo apt install -t trixie-backports -y \
     hunspell-fr \
     ddcutil
 
-# ─── User groups ──────────────────────────────────────────────────────────────
 echo "==> Adding $USER to hardware groups..."
 sudo usermod -aG audio,video,render,i2c "$USER"
 
-# ─── WineHQ repo ──────────────────────────────────────────────────────────────
 echo "==> Enabling WineHQ via extrepo..."
 sudo extrepo enable winehq
 sudo apt update
 
-# ─── DNS-over-TLS ─────────────────────────────────────────────────────────────
-# Primary:  Cloudflare for Families (blocks malware + adult content)
-# Fallback: Quad9 (blocks malware, DNSSEC-validating)
 echo "==> Configuring systemd-resolved with DNS-over-TLS..."
 sudo apt install -y systemd-resolved
 
@@ -93,7 +83,6 @@ EOF
 sudo systemctl enable --now systemd-resolved
 sudo systemctl restart systemd-resolved
 
-# Verify resolution works before continuing
 if ! resolvectl query debian.org &>/dev/null; then
     echo "WARNING: DNS resolution check failed — verify /etc/systemd/resolved.conf.d/99-dot.conf"
 fi
