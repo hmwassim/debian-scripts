@@ -23,7 +23,7 @@ if [[ -z "$LATEST_VERSION" || "$LATEST_VERSION" == "null" ]]; then
 fi
 
 INSTALLED_VERSION=""
-if dpkg -s "$PKG_NAME" &>/dev/null; then
+if dpkg-query -W -f='${db:Status-Abbrev}' "$PKG_NAME" 2>/dev/null | grep -q '^ii'; then
     INSTALLED_VERSION=$(dpkg-query -W -f='${Version}' "$PKG_NAME")
 fi
 
