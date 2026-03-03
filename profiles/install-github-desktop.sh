@@ -56,13 +56,4 @@ echo "==> Installing..."
 sudo dpkg -i "$TMP_FILE" || sudo apt-get install -f -y
 rm -f "$TMP_FILE"
 
-SYSTEM_DESKTOP="/usr/share/applications/github-desktop.desktop"
-LOCAL_APPS="$HOME/.local/share/applications"
-mkdir -p "$LOCAL_APPS"
-if [[ -f "$SYSTEM_DESKTOP" ]]; then
-    sed 's|^\(Exec=.*github-desktop\)|Exec=env ELECTRON_OZONE_PLATFORM_HINT=x11 github-desktop --ozone-platform=x11|' \
-        "$SYSTEM_DESKTOP" > "$LOCAL_APPS/github-desktop.desktop"
-    echo "==> XWayland override written to $LOCAL_APPS/github-desktop.desktop"
-fi
-
 echo "==> GitHub Desktop $LATEST_VERSION installed."
