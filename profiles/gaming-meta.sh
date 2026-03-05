@@ -4,7 +4,7 @@ set -euo pipefail
 echo "==> Updating package lists..."
 sudo apt update
 
-sudo apt install -y \
+sudo apt install -t trixie-backports -y \
     ffmpeg \
     libavcodec-extra \
     libavcodec-extra:i386 \
@@ -28,7 +28,7 @@ sudo apt install -y \
     opus-tools \
     flvmeta
 
-sudo apt install -y \
+sudo apt install -t trixie-backports -y \
     libgif7           libgif7:i386 \
     libglfw3          libglfw3:i386 \
     libgstreamer-plugins-base1.0-0 \
@@ -45,7 +45,7 @@ sudo apt install -y \
     libvulkan1        libvulkan1:i386 \
     libvulkan-dev     libvulkan-dev:i386
 
-sudo apt install -y \
+sudo apt install -t trixie-backports -y \
     timidity \
     fluidsynth \
     dosbox
