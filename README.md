@@ -4,7 +4,7 @@ Opinionated shell scripts for turning a fresh **Debian Trixie** install into a m
 Each script is self-contained and safe to re-run.
 
 ```bash
-git clone https://github.com/habibimedwassim/debian-scripts.git
+git clone https://github.com/hmwassim/debian-scripts.git
 cd debian-scripts
 ```
 
